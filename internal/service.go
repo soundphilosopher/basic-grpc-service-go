@@ -64,7 +64,7 @@ func (s *BasicServiceV1) Background(ctx context.Context, req *connect.Request[ba
 	data := []*basicServiceV1.SomeServiceResponse{}
 
 	if state == nil {
-		s.StateManager.Start(hash, basicServiceV1.State_PROCESS_STATE_PROCESS)
+		s.StateManager.Start(hash, basicServiceV1.State_STATE_PROCESS)
 		go func() {
 			// fan-out
 			s1 := utils.CallService("service-1", "rest")
@@ -79,7 +79,7 @@ func (s *BasicServiceV1) Background(ctx context.Context, req *connect.Request[ba
 				data = append(data, response.Responses...)
 			}
 
-			s.StateManager.Finish(hash, basicServiceV1.State_PROCESS_STATE_COMPLETE)
+			s.StateManager.Finish(hash, basicServiceV1.State_STATE_COMPLETE)
 		}()
 	}
 
@@ -93,7 +93,7 @@ func (s *BasicServiceV1) Background(ctx context.Context, req *connect.Request[ba
 		case <-ticker.C:
 			current_state, start, finish, _ := s.StateManager.GetState(hash)
 
-			if *current_state != basicServiceV1.State_PROCESS_STATE_PROCESS {
+			if *current_state != basicServiceV1.State_STATE_PROCESS {
 				event, err := anypb.New(&basicServiceV1.BackgroundResponseEvent{State: *current_state, StartedAt: start, CompletedAt: finish, Responses: data})
 				if err != nil {
 					return connect.NewError(connect.CodeInternal, err)

@@ -26,28 +26,28 @@ const (
 type State int32
 
 const (
-	State_PROCESS_STATE_UNSPECIFIED         State = 0
-	State_PROCESS_STATE_PROCESS             State = 1
-	State_PROCESS_STATE_COMPLETE            State = 2
-	State_PROCESS_STATE_ERROR               State = 3
-	State_PROCESS_STATE_COMPLETE_WITH_ERROR State = 4
+	State_STATE_UNSPECIFIED         State = 0
+	State_STATE_PROCESS             State = 1
+	State_STATE_COMPLETE            State = 2
+	State_STATE_ERROR               State = 3
+	State_STATE_COMPLETE_WITH_ERROR State = 4
 )
 
 // Enum value maps for State.
 var (
 	State_name = map[int32]string{
-		0: "PROCESS_STATE_UNSPECIFIED",
-		1: "PROCESS_STATE_PROCESS",
-		2: "PROCESS_STATE_COMPLETE",
-		3: "PROCESS_STATE_ERROR",
-		4: "PROCESS_STATE_COMPLETE_WITH_ERROR",
+		0: "STATE_UNSPECIFIED",
+		1: "STATE_PROCESS",
+		2: "STATE_COMPLETE",
+		3: "STATE_ERROR",
+		4: "STATE_COMPLETE_WITH_ERROR",
 	}
 	State_value = map[string]int32{
-		"PROCESS_STATE_UNSPECIFIED":         0,
-		"PROCESS_STATE_PROCESS":             1,
-		"PROCESS_STATE_COMPLETE":            2,
-		"PROCESS_STATE_ERROR":               3,
-		"PROCESS_STATE_COMPLETE_WITH_ERROR": 4,
+		"STATE_UNSPECIFIED":         0,
+		"STATE_PROCESS":             1,
+		"STATE_COMPLETE":            2,
+		"STATE_ERROR":               3,
+		"STATE_COMPLETE_WITH_ERROR": 4,
 	}
 )
 
@@ -594,7 +594,7 @@ func (x *BackgroundResponseEvent) GetState() State {
 	if x != nil {
 		return x.State
 	}
-	return State_PROCESS_STATE_UNSPECIFIED
+	return State_STATE_UNSPECIFIED
 }
 
 func (x *BackgroundResponseEvent) GetStartedAt() *timestamppb.Timestamp {
@@ -654,13 +654,13 @@ const file_basic_service_v1_service_proto_rawDesc = "" +
 	"\n" +
 	"started_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x12=\n" +
 	"\fcompleted_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\vcompletedAt\x12C\n" +
-	"\tresponses\x18\x04 \x03(\v2%.basic.service.v1.SomeServiceResponseR\tresponses*\x9d\x01\n" +
-	"\x05State\x12\x1d\n" +
-	"\x19PROCESS_STATE_UNSPECIFIED\x10\x00\x12\x19\n" +
-	"\x15PROCESS_STATE_PROCESS\x10\x01\x12\x1a\n" +
-	"\x16PROCESS_STATE_COMPLETE\x10\x02\x12\x17\n" +
-	"\x13PROCESS_STATE_ERROR\x10\x03\x12%\n" +
-	"!PROCESS_STATE_COMPLETE_WITH_ERROR\x10\x04BWZUgithub.com/soundphilosopher/basic-grpc-service-go/sdk/basic/service/v1;basicServiceV1b\x06proto3"
+	"\tresponses\x18\x04 \x03(\v2%.basic.service.v1.SomeServiceResponseR\tresponses*u\n" +
+	"\x05State\x12\x15\n" +
+	"\x11STATE_UNSPECIFIED\x10\x00\x12\x11\n" +
+	"\rSTATE_PROCESS\x10\x01\x12\x12\n" +
+	"\x0eSTATE_COMPLETE\x10\x02\x12\x0f\n" +
+	"\vSTATE_ERROR\x10\x03\x12\x1d\n" +
+	"\x19STATE_COMPLETE_WITH_ERROR\x10\x04BWZUgithub.com/soundphilosopher/basic-grpc-service-go/sdk/basic/service/v1;basicServiceV1b\x06proto3"
 
 var (
 	file_basic_service_v1_service_proto_rawDescOnce sync.Once

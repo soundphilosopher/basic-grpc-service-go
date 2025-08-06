@@ -8,11 +8,11 @@ import "io/cloudevents/v1/cloudevents.proto";
 import "google/protobuf/timestamp.proto";
 
 enum State {
-  PROCESS_STATE_UNSPECIFIED = 0;
-  PROCESS_STATE_PROCESS = 1;
-  PROCESS_STATE_COMPLETE = 2;
-  PROCESS_STATE_ERROR = 3;
-  PROCESS_STATE_COMPLETE_WITH_ERROR = 4;
+  STATE_UNSPECIFIED = 0;
+  STATE_PROCESS = 1;
+  STATE_COMPLETE = 2;
+  STATE_ERROR = 3;
+  STATE_COMPLETE_WITH_ERROR = 4;
 }
 
 message SomeServiceData {
