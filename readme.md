@@ -138,7 +138,12 @@ grpcurl '{"processes":5}' \
 
 ```bash
 # Hello endpoint via HTTP/2
-curl -k --http2 -X POST https://127.0.0.1:8443/basic.v1.BasicService/Hello \
+curl -vv --http2 -X POST https://127.0.0.1:8443/basic.v1.BasicService/Hello \
+  -H "Content-Type: application/json" \
+  -d '{"message":"World"}'
+
+# Hello endpoint via HTTP/3
+curl -vv --http3-only -X POST https://127.0.0.1:8443/basic.v1.BasicService/Hello \
   -H "Content-Type: application/json" \
   -d '{"message":"World"}'
 ```
@@ -179,7 +184,7 @@ grpcurl 127.0.0.1:8443 list basic.v1.BasicService
 ### Regenerate Protocol Buffers
 
 ```bash
-buf generate
+buf generate --clean
 ```
 
 ### Update Dependencies
@@ -249,7 +254,7 @@ mkcert -key-file certs/local.key -cert-file certs/local.crt localhost 127.0.0.1 
 ```
 
 ### Port Already in Use
-If port 8999 is busy, modify the address in `main.go`:
+If port 8443 is busy, modify the address in `main.go`:
 ```go
 func getServerAddress() string {
     return "127.0.0.1:9000" // Change port as needed
