@@ -24,27 +24,36 @@ func NewStateManager() *StateManager {
 	}
 }
 
-func (m *StateManager) Start(hash string, state basicServiceV1.State) {
+func (m *StateManager) Start(hash string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	state := basicServiceV1.State_STATE_PROCESS
 	m.state[hash] = &state
 	m.start[hash] = timestamppb.Now()
 }
 
-func (m *StateManager) Finish(hash string, state basicServiceV1.State) {
+func (m *StateManager) Finish(hash string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	var state basicServiceV1.State
+	errors, exists := m.errors[hash]
+	if exists && errors != nil && len(*errors) > 0 {
+		state = basicServiceV1.State_STATE_COMPLETE_WITH_ERROR
+	} else {
+		state = basicServiceV1.State_STATE_COMPLETE
+	}
 
 	m.state[hash] = &state
 	m.complete[hash] = timestamppb.Now()
 }
 
-func (m *StateManager) GetState(hash string) (*basicServiceV1.State, *timestamppb.Timestamp, *timestamppb.Timestamp, *[]error) {
+func (m *StateManager) GetState(hash string) (*basicServiceV1.State, *timestamppb.Timestamp, *timestamppb.Timestamp) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	return m.state[hash], m.start[hash], m.complete[hash], m.errors[hash]
+	return m.state[hash], m.start[hash], m.complete[hash]
 }
 
 func (m *StateManager) SetError(hash string, err error) {
@@ -64,12 +73,20 @@ func (m *StateManager) HasErrors(hash string) bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	return len(*m.errors[hash]) > 0
+	errors, exists := m.errors[hash]
+	if !exists || errors == nil {
+		return false
+	}
+	return len(*errors) > 0
 }
 
 func (m *StateManager) GetErrors(hash string) []error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	return *m.errors[hash]
+	errors, exists := m.errors[hash]
+	if !exists || errors == nil {
+		return []error{}
+	}
+	return *errors
 }

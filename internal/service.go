@@ -59,12 +59,12 @@ func (s *BasicServiceV1) Talk(ctx context.Context, stream *connect.BidiStream[ba
 
 func (s *BasicServiceV1) Background(ctx context.Context, req *connect.Request[basicServiceV1.BackgroundRequest], stream *connect.ServerStream[basicServiceV1.BackgroundResponse]) error {
 	hash := uuid.NewString()
-	state, _, _, _ := s.StateManager.GetState(hash)
+	state, _, _ := s.StateManager.GetState(hash)
 
 	data := []*basicServiceV1.SomeServiceResponse{}
 
 	if state == nil {
-		s.StateManager.Start(hash, basicServiceV1.State_STATE_PROCESS)
+		s.StateManager.Start(hash)
 		go func() {
 			// fan-out
 			s1 := utils.CallService("service-1", "rest")
@@ -79,7 +79,7 @@ func (s *BasicServiceV1) Background(ctx context.Context, req *connect.Request[ba
 				data = append(data, response.Responses...)
 			}
 
-			s.StateManager.Finish(hash, basicServiceV1.State_STATE_COMPLETE)
+			s.StateManager.Finish(hash)
 		}()
 	}
 
@@ -91,7 +91,7 @@ func (s *BasicServiceV1) Background(ctx context.Context, req *connect.Request[ba
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			current_state, start, finish, _ := s.StateManager.GetState(hash)
+			current_state, start, finish := s.StateManager.GetState(hash)
 
 			if *current_state != basicServiceV1.State_STATE_PROCESS {
 				event, err := anypb.New(&basicServiceV1.BackgroundResponseEvent{State: *current_state, StartedAt: start, CompletedAt: finish, Responses: data})
