@@ -1,3 +1,4 @@
+// Package utils provides utility functions and state management for the basic service.
 package utils
 
 import (
@@ -7,6 +8,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// StateManager tracks the lifecycle of background operations using unique hash identifiers.
+// It maintains state, timestamps, and errors for concurrent operations in a thread-safe manner.
 type StateManager struct {
 	mu       sync.Mutex
 	state    map[string]*basicServiceV1.State
@@ -15,6 +18,7 @@ type StateManager struct {
 	errors   map[string]*[]error
 }
 
+// NewStateManager creates a new StateManager with initialized internal maps.
 func NewStateManager() *StateManager {
 	return &StateManager{
 		state:    make(map[string]*basicServiceV1.State),
@@ -24,6 +28,8 @@ func NewStateManager() *StateManager {
 	}
 }
 
+// Start marks the beginning of an operation by setting its state to processing
+// and recording the start timestamp.
 func (m *StateManager) Start(hash string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -33,6 +39,9 @@ func (m *StateManager) Start(hash string) {
 	m.start[hash] = timestamppb.Now()
 }
 
+// Finish completes an operation by setting the final state based on error conditions
+// and recording the completion timestamp. Operations with errors are marked as
+// STATE_COMPLETE_WITH_ERROR, otherwise STATE_COMPLETE.
 func (m *StateManager) Finish(hash string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -49,6 +58,8 @@ func (m *StateManager) Finish(hash string) {
 	m.complete[hash] = timestamppb.Now()
 }
 
+// GetState returns the current state, start time, and completion time for the given hash.
+// Returns nil values for times that haven't been set yet.
 func (m *StateManager) GetState(hash string) (*basicServiceV1.State, *timestamppb.Timestamp, *timestamppb.Timestamp) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -56,6 +67,7 @@ func (m *StateManager) GetState(hash string) (*basicServiceV1.State, *timestampp
 	return m.state[hash], m.start[hash], m.complete[hash]
 }
 
+// SetError adds an error to the operation's error list. If err is nil, no action is taken.
 func (m *StateManager) SetError(hash string, err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -65,10 +77,10 @@ func (m *StateManager) SetError(hash string, err error) {
 			m.errors[hash] = &[]error{}
 		}
 		*m.errors[hash] = append(*m.errors[hash], err)
-		return
 	}
 }
 
+// HasErrors returns true if the operation has recorded any errors.
 func (m *StateManager) HasErrors(hash string) bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -80,6 +92,7 @@ func (m *StateManager) HasErrors(hash string) bool {
 	return len(*errors) > 0
 }
 
+// GetErrors returns all errors recorded for the operation, or an empty slice if none exist.
 func (m *StateManager) GetErrors(hash string) []error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

@@ -1,3 +1,5 @@
+// Package talk implements an ELIZA-like chatbot that provides conversational responses
+// using pattern matching and reflection techniques.
 package talk
 
 import (
@@ -6,14 +8,19 @@ import (
 	"strings"
 )
 
+// preprocess normalizes user input by converting to lowercase and removing
+// leading/trailing whitespace and punctuation.
 func preprocess(input string) string {
 	return strings.Trim(strings.ToLower(strings.TrimSpace(input)), `.!?'"`)
 }
 
+// randomElementFrom returns a randomly selected element from the provided slice.
 func randomElementFrom(list []string) string {
 	return list[rand.Intn(len(list))] //nolint:gosec
 }
 
+// reflect converts personal pronouns in a text fragment from first person to
+// second person and vice versa, creating a conversational reflection effect.
 func reflect(fragment string) string {
 	words := strings.Fields(fragment)
 	for i, word := range words {
@@ -24,6 +31,9 @@ func reflect(fragment string) string {
 	return strings.Join(words, " ")
 }
 
+// lookupResponse searches for a matching regex pattern in the input and returns
+// an appropriate response. If a pattern matches and contains %s placeholders,
+// the captured groups are reflected and inserted into the response template.
 func lookupResponse(input string) string {
 	for re, responses := range requestInputRegexToResponseOptions {
 		matches := re.FindStringSubmatch(input)
@@ -45,6 +55,9 @@ func lookupResponse(input string) string {
 	return randomElementFrom(defaultResponses)
 }
 
+// Reply processes user input and returns a conversational response along with
+// a boolean indicating whether the conversation should end. Returns true for
+// goodbye phrases, false otherwise.
 func Reply(input string) (string, bool) {
 	input = preprocess(input)
 	if _, ok := goodbyeInputSet[input]; ok {
@@ -54,6 +67,8 @@ func Reply(input string) (string, bool) {
 	return lookupResponse(input), false
 }
 
+// GetIntroResponses generates an introduction sequence for a new conversation,
+// including personalized greetings, a random fact about ELIZA, and an opening question.
 func GetIntroResponses(name string) []string {
 	intros := make([]string, 0, len(introResponses)+2)
 	for _, n := range introResponses {

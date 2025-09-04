@@ -10,6 +10,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// CreateCloudEvent wraps a gRPC request and event data into a CloudEvents v1.0 compliant structure.
+// The Cloud Event includes metadata from the original request such as source procedure and host,
+// along with a unique ID and timestamp. Returns an error if the request cannot be converted.
 func CreateCloudEvent(request any, event *anypb.Any) (*cloudeventsV1.CloudEvent, error) {
 	if req, ok := request.(connect.AnyRequest); ok {
 		ce := &cloudeventsV1.CloudEvent{
@@ -23,6 +26,7 @@ func CreateCloudEvent(request any, event *anypb.Any) (*cloudeventsV1.CloudEvent,
 			Attributes: map[string]*cloudeventsV1.CloudEvent_CloudEventAttributeValue{},
 		}
 
+		// Add timestamp attribute
 		ce.Attributes["time"] = &cloudeventsV1.CloudEvent_CloudEventAttributeValue{
 			Attr: &cloudeventsV1.CloudEvent_CloudEventAttributeValue_CeTimestamp{
 				CeTimestamp: timestamppb.Now(),

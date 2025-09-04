@@ -2,6 +2,7 @@ package talk
 
 import "regexp"
 
+// goodbyeInputSet contains input phrases that trigger conversation termination.
 var goodbyeInputSet = map[string]struct{}{
 	"bye":     {},
 	"exit":    {},
@@ -9,6 +10,7 @@ var goodbyeInputSet = map[string]struct{}{
 	"quit":    {},
 }
 
+// goodbyeResponses contains various farewell messages for conversation endings.
 var goodbyeResponses = []string{
 	"Goodbye. It was nice talking to you.",
 	"Thank you for talking with me.",
@@ -20,6 +22,8 @@ var goodbyeResponses = []string{
 	"Good-bye.",
 }
 
+// requestInputRegexToResponseOptions maps input patterns to possible response templates.
+// Responses may include %s placeholders that are filled with reflected user input.
 var requestInputRegexToResponseOptions = map[*regexp.Regexp][]string{
 	regexp.MustCompile(`i need (.*)`): {
 		"Why do you need %s?",
@@ -237,6 +241,7 @@ var requestInputRegexToResponseOptions = map[*regexp.Regexp][]string{
 	},
 }
 
+// defaultResponses contains fallback responses when no pattern matches the input.
 var defaultResponses = []string{
 	"Please tell me more.",
 	"Let's change focus a bit...Tell me about your family.",
@@ -248,6 +253,8 @@ var defaultResponses = []string{
 	"How do you feel when you say that?",
 }
 
+// reflectedWords maps personal pronouns and possessives for perspective reflection.
+// Used to convert user statements from first person to second person in responses.
 var reflectedWords = map[string]string{
 	"am":     "are",
 	"was":    "were",
@@ -265,11 +272,13 @@ var reflectedWords = map[string]string{
 	"me":     "you",
 }
 
+// introResponses contains greeting templates for starting conversations.
 var introResponses = []string{
 	"Hi %s. I'm just a greeter.",
 	"Before we begin, %s, let me tell you something about myself.",
 }
 
+// facts contains historical information about the original ELIZA program.
 var facts = []string{
 	"I was created by Joseph Weizenbaum.",
 	"I was created in the 1960s.",

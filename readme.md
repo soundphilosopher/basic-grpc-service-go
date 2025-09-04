@@ -1,5 +1,11 @@
 # 🚀 Basic gRPC Service
 
+[![Go Version](https://img.shields.io/github/go-mod/go-version/soundphilosopher/basic-grpc-service-go)](https://golang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Report Card](https://goreportcard.com/badge/github.com/soundphilosopher/basic-grpc-service-go)](https://goreportcard.com/report/github.com/soundphilosopher/basic-grpc-service-go)
+[![ConnectRPC](https://img.shields.io/badge/ConnectRPC-v1.18.1-blue.svg)](https://connectrpc.com/)
+[![HTTP/3](https://img.shields.io/badge/HTTP%2F3-supported-green.svg)](https://tools.ietf.org/html/rfc9114)
+
 A modern, high-performance gRPC service built with Go, featuring ConnectRPC, dual HTTP/2 and HTTP/3 support, and comprehensive observability.
 
 ## ✨ Features
@@ -16,7 +22,7 @@ A modern, high-performance gRPC service built with Go, featuring ConnectRPC, dua
 
 ## 🛠️ Tech Stack
 
-- **Language**: Go 1.21+
+- **Language**: Go 1.24+
 - **RPC Framework**: ConnectRPC
 - **Protocol Buffers**: buf CLI for code generation
 - **TLS**: mkcert for local certificate management
@@ -37,7 +43,7 @@ Before running this service, make sure you have:
 ### 1. Clone and Setup
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/soundphilosopher/basic-grpc-service-go
 cd basic-grpc-service-go
 ```
 
@@ -199,26 +205,6 @@ go mod verify
 ```bash
 go fmt ./...
 go vet ./...
-```
-
-## 🐳 Docker Support
-
-Create a `Dockerfile` for containerized deployment:
-
-```dockerfile
-FROM golang:1.21-alpine AS builder
-WORKDIR /app
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
-RUN CGO_ENABLED=0 go build -o service main.go
-
-FROM alpine:latest
-RUN apk --no-cache add ca-certificates
-WORKDIR /root/
-COPY --from=builder /app/service .
-COPY --from=builder /app/certs ./certs
-CMD ["./service"]
 ```
 
 ## 🚦 Health Monitoring

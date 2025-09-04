@@ -1,3 +1,4 @@
+// Package internal implements the BasicService gRPC handlers with Cloud Events support.
 package internal
 
 import (
@@ -16,6 +17,22 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
+// BasicServiceV1 implements the gRPC BasicService interface providing
+// Hello, Talk, and Background operations with state management capabilities.
+type BasicServiceV1 struct {
+	StateManager *utils.StateManager
+}
+
+// NewBasicServiceV1 creates a new BasicServiceV1 instance with an initialized StateManager.
+// The StateManager tracks the lifecycle of background operations.
+func NewBasicServiceV1() *BasicServiceV1 {
+	return &BasicServiceV1{
+		StateManager: utils.NewStateManager(),
+	}
+}
+
+// Hello handles simple greeting requests and returns a Cloud Event response.
+// The greeting message is formatted with the provided input message.
 func (s *BasicServiceV1) Hello(ctx context.Context, req *connect.Request[basicServiceV1.HelloRequest]) (*connect.Response[basicServiceV1.HelloResponse], error) {
 	event, err := anypb.New(&basicServiceV1.HelloResponseEvent{Greeting: fmt.Sprintf("Hello, %s", req.Msg.Message)})
 	if err != nil {
@@ -33,6 +50,8 @@ func (s *BasicServiceV1) Hello(ctx context.Context, req *connect.Request[basicSe
 	return resp, nil
 }
 
+// Talk handles bidirectional streaming conversation using the talk module.
+// The stream continues until the client closes it or the talk module signals end.
 func (s *BasicServiceV1) Talk(ctx context.Context, stream *connect.BidiStream[basicServiceV1.TalkRequest, basicServiceV1.TalkResponse]) error {
 	for {
 		if err := ctx.Err(); err != nil {
@@ -57,23 +76,27 @@ func (s *BasicServiceV1) Talk(ctx context.Context, stream *connect.BidiStream[ba
 	}
 }
 
+// Background handles long-running operations by orchestrating multiple service calls
+// and streaming periodic status updates. Uses fan-out/fan-in pattern to call
+// multiple services concurrently and reports progress every 2 seconds.
 func (s *BasicServiceV1) Background(ctx context.Context, req *connect.Request[basicServiceV1.BackgroundRequest], stream *connect.ServerStream[basicServiceV1.BackgroundResponse]) error {
 	hash := uuid.NewString()
 	state, _, _ := s.StateManager.GetState(hash)
 
 	data := []*basicServiceV1.SomeServiceResponse{}
 
+	// Start background processing if not already running
 	if state == nil {
 		s.StateManager.Start(hash)
 		go func() {
-			// fan-out
+			// Fan-out: call multiple services concurrently
 			s1 := utils.CallService("service-1", "rest")
 			s2 := utils.CallService("service-2", "rpc")
 			s3 := utils.CallService("service-3", "grpc")
 			s4 := utils.CallService("service-4", "rest")
 			s5 := utils.CallService("service-5", "grpc")
 
-			// fan-in
+			// Fan-in: collect responses as they arrive
 			for response := range utils.MergeServiceResponses(s1, s2, s3, s4, s5) {
 				log.Printf("Received response: %v", response)
 				data = append(data, response.Responses...)
@@ -86,6 +109,7 @@ func (s *BasicServiceV1) Background(ctx context.Context, req *connect.Request[ba
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 
+	// Stream status updates until processing completes
 	for {
 		select {
 		case <-ctx.Done():
@@ -93,6 +117,7 @@ func (s *BasicServiceV1) Background(ctx context.Context, req *connect.Request[ba
 		case <-ticker.C:
 			current_state, start, finish := s.StateManager.GetState(hash)
 
+			// Send final response when processing is complete
 			if *current_state != basicServiceV1.State_STATE_PROCESS {
 				event, err := anypb.New(&basicServiceV1.BackgroundResponseEvent{State: *current_state, StartedAt: start, CompletedAt: finish, Responses: data})
 				if err != nil {
@@ -111,6 +136,7 @@ func (s *BasicServiceV1) Background(ctx context.Context, req *connect.Request[ba
 				return nil
 			}
 
+			// Send progress update
 			event, err := anypb.New(&basicServiceV1.BackgroundResponseEvent{State: *current_state, StartedAt: start, CompletedAt: finish, Responses: data})
 			if err != nil {
 				return connect.NewError(connect.CodeInternal, err)
