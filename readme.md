@@ -19,6 +19,8 @@ A modern, high-performance gRPC service built with Go, featuring ConnectRPC, dua
 - **Streaming Support**: Bidirectional streaming capabilities
 - **Background Processing**: Asynchronous task processing with state management
 - **Fan-out/Fan-in Pattern**: Demonstrates concurrent service calls and response aggregation
+- **Docker Support**: Multi-stage Docker build for optimized container deployment
+- **Configurable Address**: Command-line flag support for server address configuration
 
 ## 🛠️ Tech Stack
 
@@ -29,6 +31,7 @@ A modern, high-performance gRPC service built with Go, featuring ConnectRPC, dua
 - **HTTP/3**: QUIC protocol support
 - **State Management**: Custom in-memory state manager
 - **Observability**: Structured logging and health monitoring
+- **Containerization**: Docker with Alpine Linux base
 
 ## 📋 Prerequisites
 
@@ -37,17 +40,20 @@ Before running this service, make sure you have:
 - Go 1.21 or later
 - [buf CLI](https://buf.build/docs/installation)
 - [mkcert](https://github.com/FiloSottile/mkcert) for local TLS certificates
+- Docker (optional, for containerized deployment)
 
 ## 🚀 Quick Start
 
-### 1. Clone and Setup
+### Option 1: Native Go Development
+
+#### 1. Clone and Setup
 
 ```bash
 git clone https://github.com/soundphilosopher/basic-grpc-service-go
 cd basic-grpc-service-go
 ```
 
-### 2. Generate TLS Certificates
+#### 2. Generate TLS Certificates
 
 ```bash
 # Install mkcert (if not already installed)
@@ -59,118 +65,105 @@ mkcert -install
 
 # Generate certificates for localhost
 mkdir -p certs
-mkcert -key-file certs/local.key -cert-file certs/local.crt localhost 127.0.0.1 ::1
+mkcert -key-file certs/local.key -cert-file certs/local.crt localhost 127.0.0.1 0.0.0.0 ::1
 ```
 
-### 3. Generate Protocol Buffer Code
+#### 3. Generate Protocol Buffer Code
 
 ```bash
 buf generate
 ```
 
-### 4. Install Dependencies
+#### 4. Install Dependencies
 
 ```bash
 go mod tidy
 ```
 
-### 5. Run the Service
+#### 5. Run the Service
 
 ```bash
+# Run with default address (127.0.0.1:8443)
 go run main.go
+
+# Run with custom address
+go run main.go -server-addr "0.0.0.0:9090"
 ```
 
-The service will start on `https://127.0.0.1:8443` with both HTTP/2 and HTTP/3 support.
+### Option 2: Docker Deployment
 
-## 🔌 API Endpoints
-
-### Hello
-Simple greeting service that demonstrates basic request/response pattern.
-
-**Request:**
-```json
-{
-  "message": "World"
-}
-```
-
-**Response:** CloudEvent containing greeting message.
-
-### Talk
-Interactive bidirectional streaming for real-time conversations.
-
-**Usage:** Send messages and receive contextual responses in real-time.
-
-### Background
-Demonstrates asynchronous processing with state management and fan-out/fan-in patterns.
-
-**Features:**
-- State tracking (PROCESS → COMPLETE)
-- Concurrent external service calls
-- Response aggregation
-- Real-time status updates via streaming
-
-## 🧪 Testing the Service
-
-### Using grpcurl
+#### 1. Generate TLS Certificates
 
 ```bash
-# Health check
-grpcurl 127.0.0.1:8443 grpc.health.v1.Health/Check
+# Create certificates directory
+mkdir -p certs
 
-# Hello endpoint
-grpcurl -d '{"message":"World"}' \
-  127.0.0.1:8443 basic.v1.BasicService/Hello
-
-# ELIZA chatbot
-cat <<EOM | grpcurl -d @ 127.0.0.1:8443 basic.v1.BasicService/Talk
-{
-  "message": "Hello"
-}
-{
-  "message": "How are you?"
-}
-{
-  "message": "Bye."
-}
-EOM
-
-# Background processing
-grpcurl '{"processes":5}' \
-  127.0.0.1:8443 basic.v1.BasicService/Background
+# Generate certificates for localhost and Docker environments
+mkcert -key-file certs/local.key -cert-file certs/local.crt localhost 127.0.0.1 0.0.0.0 ::1
 ```
 
-### Using curl (HTTP/2)
+#### 2. Build Docker Image
 
 ```bash
-# Hello endpoint via HTTP/2
-curl -vv --http2 -X POST https://127.0.0.1:8443/basic.v1.BasicService/Hello \
-  -H "Content-Type: application/json" \
-  -d '{"message":"World"}'
+# Build the Docker image
+docker build -f docker/Dockerfile -t basic-grpc-service:0.1.0 .
+```
 
-# Hello endpoint via HTTP/3
-curl -vv --http3-only -X POST https://127.0.0.1:8443/basic.v1.BasicService/Hello \
+#### 3. Run Docker Container
+
+```bash
+# Run with default address (127.0.0.1:8443)
+docker run -d \
+  --name grpc-service \
+  -p 8443:8443/tcp \
+  -p 8443:8443/udp \
+  -v $(pwd)/certs:/app/certs:ro \
+  basic-grpc-service:0.1.0
+
+# Run with custom address (bind to all interfaces)
+docker run -d \
+  --name grpc-service \
+  -p 9090:9090/tcp \
+  -p 9090:9090/udp \
+  -v $(pwd)/certs:/app/certs:ro \
+  basic-grpc-service:0.1.0 grpc-server -server-addr "0.0.0.0:9090"
+```
+
+#### 4. Verify Container Status
+
+```bash
+# Check container logs
+docker logs grpc-service
+
+# Test the service
+curl -k --http2 -X POST https://localhost:8443/basic.v1.BasicService/Hello \
   -H "Content-Type: application/json" \
   -d '{"message":"World"}'
 ```
 
-### Service Reflection
+The service will start with both HTTP/2 and HTTP/3 support.
+
+## ⚙️ Configuration
+
+### Command Line Flags
+
+- **`-server-addr`**: Server bind address (default: `127.0.0.1:8443`)
 
 ```bash
-# List available services
-grpcurl 127.0.0.1:8443 list
-
-# Describe a service
-grpcurl 127.0.0.1:8443 describe basic.v1.BasicService
-
-# List methods of service
-grpcurl 127.0.0.1:8443 list basic.v1.BasicService
+# Examples
+./grpc-server -server-addr "0.0.0.0:8080"    # Bind to all interfaces on port 8080
+./grpc-server -server-addr "localhost:9443"   # Bind to localhost on port 9443
+./grpc-server -h                               # Show help with available flags
+```
 ```
 
+```basic-grpc-service-go/readme.md#L185-235
 ## 🏗️ Project Structure
 
 ```
 ├── certs/              # TLS certificates
+├── docker/             # Docker configuration
+│   └── Dockerfile     # Multi-stage Docker build
 ├── examples/           # Usage examples and demos
 ├── internal/           # Private application code
 │   ├── talk/          # Conversation logic
@@ -207,6 +200,24 @@ go fmt ./...
 go vet ./...
 ```
 
+### Docker Development
+
+```bash
+# Rebuild Docker image
+docker build -f docker/Dockerfile -t basic-grpc-service:0.1.0 .
+
+# Run in development mode with live logs
+docker run --rm \
+  -p 8443:8443/tcp \
+  -p 8443:8443/udp \
+  -v $(pwd)/certs:/app/certs:ro \
+  basic-grpc-service:0.1.0
+
+# Clean up containers and images
+docker rm -f grpc-service
+docker rmi basic-grpc-service
+```
+
 ## 🚦 Health Monitoring
 
 The service includes comprehensive health checking:
@@ -236,15 +247,36 @@ If you encounter TLS certificate errors:
 # Regenerate certificates
 rm -rf certs/
 mkdir certs
-mkcert -key-file certs/local.key -cert-file certs/local.crt localhost 127.0.0.1 ::1
+mkcert -key-file certs/local.key -cert-file certs/local.crt localhost 127.0.0.1 0.0.0.0 ::1
 ```
 
-### Port Already in Use
-If port 8443 is busy, modify the address in `main.go`:
-```go
-func getServerAddress() string {
-    return "127.0.0.1:9000" // Change port as needed
-}
+### Port Configuration
+Change the server address using the command-line flag:
+```bash
+# Native Go
+go run main.go -server-addr "127.0.0.1:9000"
+
+# Docker
+docker run -p 9000:9000/tcp -p 9000:9000/udp \
+  -v $(pwd)/certs:/app/certs:ro \
+  basic-grpc-service -server-addr "0.0.0.0:9000"
+```
+
+### Docker Issues
+
+**Container won't start:**
+```bash
+# Check logs
+docker logs grpc-service
+
+# Verify certificates are mounted
+docker run --rm -v $(pwd)/certs:/app/certs:ro alpine ls -la /app/certs
+```
+
+**Port binding conflicts:**
+```bash
+# Use different ports
+docker run -p 9090:8443/tcp -p 9090:8443/udp basic-grpc-service
 ```
 
 ### Protocol Buffer Generation Fails
@@ -254,6 +286,19 @@ buf mod update
 buf generate
 ```
 
+## 🐳 Docker Details
+
+The Docker image uses a multi-stage build:
+
+1. **Build Stage**: Uses `golang:1.24-alpine3.22` to compile the Go application
+2. **Runtime Stage**: Uses minimal `alpine:3.22` for a small, secure final image
+
+**Benefits:**
+- Small image size (~15MB final image)
+- Security-focused with minimal attack surface
+- Optimized for production deployment
+- Efficient layer caching for fast rebuilds
+
 ## 🔗 Useful Links
 
 - [ConnectRPC Documentation](https://connectrpc.com/docs/)
@@ -261,6 +306,7 @@ buf generate
 - [buf CLI Reference](https://buf.build/docs/)
 - [gRPC Health Checking](https://github.com/grpc/grpc/blob/master/doc/health-checking.md)
 - [HTTP/3 Specification](https://tools.ietf.org/html/rfc9114)
+- [Docker Multi-stage Builds](https://docs.docker.com/build/building/multi-stage/)
 
 ---
 

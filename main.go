@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"net/http"
 	"time"
@@ -56,9 +57,13 @@ func setupMux() *http.ServeMux {
 	return mux
 }
 
-// getServerAddress returns the server bind address.
+// getServerAddress parses command line flags and returns the server bind address.
+// If -server-addr flag is not provided, defaults to "127.0.0.1:8443"
 func getServerAddress() string {
-	return "127.0.0.1:8443"
+	serverAddr := flag.String("server-addr", "127.0.0.1:8443", "server address to bind to")
+	flag.Parse()
+
+	return *serverAddr
 }
 
 // createHTTP2Server creates an HTTP/2 server with h2c support and reasonable timeouts.
