@@ -155,12 +155,10 @@ The service will start with both HTTP/2 and HTTP/3 support.
 ./grpc-server -server-addr "localhost:9443"   # Bind to localhost on port 9443
 ./grpc-server -h                               # Show help with available flags
 ```
-```
 
-```basic-grpc-service-go/readme.md#L185-235
 ## 🏗️ Project Structure
 
-```
+```text
 ├── certs/              # TLS certificates
 ├── docker/             # Docker configuration
 │   └── Dockerfile     # Multi-stage Docker build
