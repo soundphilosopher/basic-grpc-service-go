@@ -1,6 +1,6 @@
 # Multi-stage Docker build for a Go gRPC service
 # Stage 1: Build stage using official Go image with Alpine Linux
-FROM golang:1.24-alpine3.22 AS build
+FROM golang:1.25.5-alpine3.23 AS build
 
 # Set the working directory inside the build container
 WORKDIR /app
@@ -26,7 +26,7 @@ COPY ./main.go .
 RUN go build -v -o /usr/local/bin/grpc-server .
 
 # Stage 2: Runtime stage using minimal Alpine Linux image
-FROM alpine:3.22
+FROM alpine:3.23
 
 # Set working directory in the runtime container
 WORKDIR /app
@@ -37,3 +37,6 @@ COPY --from=build /usr/local/bin/grpc-server /usr/local/bin/grpc-server
 
 # Set the default command to run when the container starts
 CMD [ "grpc-server", "-server-addr", "0.0.0.0:8443" ]
+
+# Expose the gRPC server port
+EXPOSE 8443
